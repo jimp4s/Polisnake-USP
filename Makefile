@@ -1,54 +1,66 @@
-# Makefile Definitivo para o projeto Polisnake
+# Makefile Final e Definitivo (v9)
+# Construído sob medida para a sua estrutura de arquivos.
 
-# Altere para a sua versão da Pi. Opções: 1, 2, 3, 4
-RPI_VERSION = 3
-
-# Prefixo do compilador
+RPI_VERSION = 2
 GCC_PREFIX = arm-none-eabi-
+TARGET = kernel.img
 
-# Nome do arquivo final
-TARGET = kernel7.img
-ifeq ($(RPI_VERSION), 4)
-    TARGET = kernel7l.img
-endif
-ifeq ($(RPI_VERSION), 1)
-	TARGET = kernel.img
-endif
+# A correção crucial: Apontamos para "env/include", o que permite que
+# o compilador encontre o subdiretório "uspienv".
+INCLUDE_DIRS = -Iinclude -Ienv/include
 
-# Diretórios para procurar arquivos de cabeçalho (.h)
-# Esta linha garante que o compilador encontre rpi-mailbox.h e todos os outros.
-INCLUDE_DIRS = -Iinclude -Iuspi -Ienv/$(RPI_VERSION)
+# Lista completa de arquivos-fonte (.c e .S) da sua biblioteca.
+SOURCES = lib/uspilibrary.c \
+          lib/usbkeyboard.c \
+          lib/usbdevice.c \
+          lib/usbfunction.c \
+          lib/usbrequest.c \
+          lib/usbstandardhub.c \
+          lib/string.c \
+          lib/util.c \
+          lib/keymap.c \
+          lib/synchronize.c \
+          lib/devicenameservice.c \
+          lib/dwhcidevice.c \
+          lib/dwhciframeschednper.c \
+          lib/dwhciframeschednsplit.c \
+          lib/dwhciframeschedper.c \
+          lib/dwhciregister.c \
+          lib/dwhcirootport.c \
+          lib/dwhcixferstagedata.c \
+          env/lib/bcmframebuffer.c \
+          env/lib/bcmmailbox.c \
+          env/lib/bcmpropertytags.c \
+          env/lib/chargenerator.c \
+          env/lib/assert.c \
+          env/lib/interrupt.c \
+          env/lib/logger.c \
+          env/lib/memory.c \
+          env/lib/screen.c \
+          env/lib/sysinit.c \
+          env/lib/timer.c \
+          env/lib/uspibind.c \
+          env/lib/uspienv.c \
+          env/$(RPI_VERSION)/rpi-stub.S \
+          env/lib/delayloop.S \
+          kernel.c
 
-# Lista de todos os arquivos-fonte (.c) necessários para compilar.
-SOURCES_C = kernel.c \
-            uspi/uspi.c \
-            uspi/uspistd.c \
-            uspi/uspihub.c \
-            uspi/usbkeyboard.c \
-            uspi/usbmsc.c \
-            uspi/usbdevice.c \
-            uspi/usbdriver.c \
-            uspi/usbhid.c \
-            uspi/usbsys.c \
-            env/$(RPI_VERSION)/rpi-stub.c \
-            env/$(RPI_VERSION)/rpi-systimer.c \
-            env/$(RPI_VERSION)/rpi-gpio.c \
-            env/$(RPI_VERSION)/rpi-interrupts.c \
-            env/$(RPI_VERSION)/rpi-mailbox.c \
-            env/font.c
-
-# Opções de compilação
+# OPÇÕES DE COMPILAÇÃO E LINKER
 CFLAGS = -g -O2 -ffreestanding -nostdlib $(INCLUDE_DIRS) -DRPI_VERSION=$(RPI_VERSION)
-LDFLAGS = -T env/$(RPI_VERSION)/rpi.ld -nostdlib
+LDFLAGS = -T env/uspienv.ld -nostdlib
 
-# --- Regras de Compilação (não alterar abaixo) ---
-OBJS = $(patsubst %.c,build/%.o,$(filter %.c,$(SOURCES_C)))
+# --- REGRAS DE COMPILAÇÃO (NÃO ALTERAR) ---
+OBJS = $(patsubst %.c,build/%.o,$(filter %.c,$(SOURCES))) \
+       $(patsubst %.S,build/%.o,$(filter %.S,$(SOURCES)))
 
 .PHONY: all clean
-
 all: $(TARGET)
 
 build/%.o: %.c
+	@mkdir -p $(@D)
+	$(GCC_PREFIX)gcc $(CFLAGS) -c $< -o $@
+
+build/%.o: %.S
 	@mkdir -p $(@D)
 	$(GCC_PREFIX)gcc $(CFLAGS) -c $< -o $@
 
