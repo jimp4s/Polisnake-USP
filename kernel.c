@@ -1,23 +1,18 @@
 /**
- * kernel.c (v8 - Final e Definitivo)
- * Usa a API de alto nível da sua biblioteca e a ordem de includes correta.
+ * kernel.c (v14 - Final e Definitivo)
+ * Inclui screen.h e usa main() como ponto de entrada.
  */
 
-// A ORDEM CORRETA QUE RESOLVE TODOS OS ERROS
-#include "uspios.h"
+#include "uspienv.h"
 #include "uspi.h"
-#include "uspienv.h" // Header principal do seu ambiente
-#include "screen.h"  // Header para as funções de tela
+#include "screen.h"  // Header que define ScreenInitialise, etc.
 
-// --- Buffer do Teclado ---
 #define KBD_BUFFER_SIZE 256
 static char kbd_buffer[KBD_BUFFER_SIZE];
 static volatile unsigned int kbd_write_pos = 0, kbd_read_pos = 0;
 
-// Handler que a USPi chama quando uma tecla é pressionada
 void KeyPressedHandler(const char *pString)
 {
-    // Apenas armazena o primeiro caractere da string (ignora Shift, etc.)
 	if (*pString != '\0')
 	{
 		kbd_buffer[kbd_write_pos] = *pString;
@@ -25,23 +20,17 @@ void KeyPressedHandler(const char *pString)
 	}
 }
 
-// Função para nosso loop principal pegar um caractere do buffer
 char GetChar(void)
 {
-	if (kbd_read_pos == kbd_write_pos)
-	{
-		return 0; // Buffer vazio
-	}
-
+	if (kbd_read_pos == kbd_write_pos) return 0;
 	char ch = kbd_buffer[kbd_read_pos];
 	kbd_read_pos = (kbd_read_pos + 1) % KBD_BUFFER_SIZE;
 	return ch;
 }
 
-// --- Ponto de Entrada Principal ---
-void kernel_main(void)
+// O ponto de entrada que o sysinit.c chama é "main"
+int main(void)
 {
-	// A sua biblioteca já tem uma função para inicializar a tela!
 	ScreenInitialise();
 	ScreenClear();
 
@@ -55,8 +44,7 @@ void kernel_main(void)
 
 	while (!USPiKeyboardAvailable())
 	{
-		// Na sua versão da biblioteca, USPiInitialize inicia um timer
-		// que chama o trabalho periódico, então não precisamos chamá-lo em loop.
+		// Loop de espera
 	}
 
 	USPiKeyboardRegisterKeyPressedHandler(KeyPressedHandler);
@@ -73,4 +61,6 @@ void kernel_main(void)
 			ScreenWriteString(str);
 		}
 	}
+	
+	return 0;
 }
