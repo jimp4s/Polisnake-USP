@@ -1,22 +1,22 @@
 /**
- * kernel.c (v3 - Versão Definitiva)
+ * kernel.c (Versão Definitiva Final)
  *
- * Usa a API unificada de uspi.h para ler o teclado.
- * Esta é a abordagem correta para a versão da biblioteca em uso.
+ * Corrige a ordem dos includes para resolver todos os erros de compilação.
  */
 
-#include "uspios.h"
-#include "uspi.h"           // O único header da USPi que precisamos!
-#include "rpi-mailbox.h"
+// A ORDEM DESTES INCLUDES É A SOLUÇÃO PARA O ERRO DE COMPILAÇÃO.
+#include "uspios.h"         // 1. ESTE ARQUIVO DEVE SER O PRIMEIRO. Ele define 'u8'.
+#include "uspi.h"           // 2. Este arquivo usa 'u8', então deve vir depois.
+#include "rpi-mailbox.h"    // 3. O resto dos arquivos.
 #include "rpi-systimer.h"
 #include <string.h>
 
-// Protótipos de funções que a USPi espera que existam
+// Protótipos
 void Log(const char *pSource, int nSeverity, const char *pMessage, ...);
 void uspi_assertion_failed(const char *pExpr, const char *pFile, int nLine);
 extern const unsigned char _font[];
 
-// --- Framebuffer e Funções de Desenho (sem alterações) ---
+// --- Framebuffer e Funções de Desenho ---
 static volatile unsigned int *framebuffer;
 static unsigned int screen_width, screen_height, cursor_x = 0, cursor_y = 0;
 
@@ -60,13 +60,11 @@ int InitializeFrameBuffer(void) {
 static char kbd_buffer[KBD_BUFFER_SIZE];
 static volatile unsigned int kbd_write_pos = 0, kbd_read_pos = 0;
 
-// Esta é a nossa função "handler". USPi irá chamá-la.
 void KeyPressedHandler(const char *pString) {
     kbd_buffer[kbd_write_pos] = pString[0];
     kbd_write_pos = (kbd_write_pos + 1) % KBD_BUFFER_SIZE;
 }
 
-// Função para ler um caractere do nosso buffer.
 char GetChar(void) {
     if (kbd_read_pos == kbd_write_pos) return 0;
     char ch = kbd_buffer[kbd_read_pos];
@@ -76,29 +74,24 @@ char GetChar(void) {
 
 // --- Ponto de Entrada Principal ---
 void kernel_main(void) {
-    // 1. Inicializar hardware
     if (InitializeFrameBuffer() != 0) while(1);
     if (!USPiInitialize()) {
         ClearScreen(0xFFFF0000); Print("Falha ao inicializar USPi!"); while(1);
     }
     
-    ClearScreen(0xFF00008B); // Azul escuro
+    ClearScreen(0xFF00008B);
     Print("USPi Inicializado. Aguardando teclado...\n");
 
-    // 2. Esperar pelo teclado
     while (!USPiKeyboardAvailable()) {
-        USPiPeriodicWork(); // Deve ser chamado em loop
+        USPiPeriodicWork();
     }
     
-    // 3. Registrar nosso handler
     USPiKeyboardRegisterKeyPressedHandler(KeyPressedHandler);
-
     ClearScreen(0xFF00008B);
     Print("Teclado conectado! Pode comecar a digitar...\n\n");
 
-    // 4. Loop principal de eco
     while (1) {
-        USPiPeriodicWork(); // Essencial para manter a USPi funcionando
+        USPiPeriodicWork();
 
         char ch = GetChar();
         if (ch != 0) {

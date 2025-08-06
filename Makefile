@@ -1,5 +1,4 @@
-# Makefile para compilar o kernel.c com a biblioteca USPi (versão 2)
-# Usando o driver de baixo nível usbkeyboard.h
+# Makefile Definitivo para o projeto Polisnake
 
 # Altere para a sua versão da Pi. Opções: 1, 2, 3, 4
 RPI_VERSION = 3
@@ -7,7 +6,7 @@ RPI_VERSION = 3
 # Prefixo do compilador
 GCC_PREFIX = arm-none-eabi-
 
-# Nome do arquivo final (kernel7.img para Pi 2/3)
+# Nome do arquivo final
 TARGET = kernel7.img
 ifeq ($(RPI_VERSION), 4)
     TARGET = kernel7l.img
@@ -17,9 +16,10 @@ ifeq ($(RPI_VERSION), 1)
 endif
 
 # Diretórios para procurar arquivos de cabeçalho (.h)
+# Esta linha garante que o compilador encontre rpi-mailbox.h e todos os outros.
 INCLUDE_DIRS = -Iinclude -Iuspi -Ienv/$(RPI_VERSION)
 
-# Arquivos fonte C
+# Lista de todos os arquivos-fonte (.c) necessários para compilar.
 SOURCES_C = kernel.c \
             uspi/uspi.c \
             uspi/uspistd.c \
@@ -41,7 +41,7 @@ SOURCES_C = kernel.c \
 CFLAGS = -g -O2 -ffreestanding -nostdlib $(INCLUDE_DIRS) -DRPI_VERSION=$(RPI_VERSION)
 LDFLAGS = -T env/$(RPI_VERSION)/rpi.ld -nostdlib
 
-# Regras de compilação (não precisa alterar abaixo desta linha)
+# --- Regras de Compilação (não alterar abaixo) ---
 OBJS = $(patsubst %.c,build/%.o,$(filter %.c,$(SOURCES_C)))
 
 .PHONY: all clean
